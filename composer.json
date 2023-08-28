@@ -1,0 +1,19 @@
+{
+    "version": "1.0.0",
+    "name": "abdumannon/docmaker",
+    "description": "This package helps you to create json files for swagger and other making API documantation",
+    "autoload": {
+        "psr-4": {
+            "Abd\\Docmaker\\": "src/"
+        }, 
+        "files": [
+            "src/helpers.php"
+        ]
+    },
+    "authors": [
+        {
+            "name": "Abdumannon Norboyev"
+        }
+    ],
+    "license": "MIT"
+}
