@@ -140,7 +140,7 @@ trait RoutesTrait
             if (!in_array($method, ['GET', 'DELETE'])) {
                 $route['data'] = $this->authData($controllerName);
             }
-            $route['tags'] = $this->sliceControllerName($controllerName);
+            $route['tags'] = [$this->sliceControllerName($controllerName)];
             $route['description'] = '';
             $route['content-type'] = 'application/json';
             $route['auth'] = true;
@@ -156,8 +156,8 @@ trait RoutesTrait
                 "grant_type" => "password",
                 "client_secret" => "Mt57LfRyUwwWIuKfSXnNzQAeWxQY0JFNerkrLymd",
                 "client_id" => 2,
-                "username" => "tester@admdev.uz",
-                "password" => "@dmDev)#)$"
+                "username" => "AN0657",
+                "password" => "Adm@0657"
             ] : [];
     }
 }

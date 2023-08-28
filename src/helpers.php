@@ -69,7 +69,7 @@ if (!function_exists('callerOfArray')) {
     function callerOfArray($array)
     {
         foreach ($array as $key => $value) {
-            if (is_callable($value)) {
+            if ($value instanceof Closure) {
                 $result = $value();
                 if (is_array($result)) {
                     $array[$key] = callerOfArray($result);
@@ -87,8 +87,8 @@ if (!function_exists('callerOfArray')) {
 }
 
 
-if (!function_exists('getter')) {
-    function getter($array, $key)
+if (!function_exists('getterValue')) {
+    function getterValue($array, $key)
     {
         return is_array($array) && isset($array[$key]) ? $array[$key] : null;
     }

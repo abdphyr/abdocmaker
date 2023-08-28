@@ -2,6 +2,8 @@
 namespace Abd\Docmaker\Traits;
 
 use Illuminate\Support\Str;
+use Closure;
+
 
 trait WriteTrait
 {
@@ -9,18 +11,18 @@ trait WriteTrait
     {
         $data = json_decode($response->getContent(), true);
         $resschema = $this->parser($data);
-        $body['tags'] = getter($route, 'tags');
-        $body['description'] = getter($route, 'description');
+        $body['tags'] = getterValue($route, 'tags');
+        $body['description'] = getterValue($route, 'description');
         if (!empty($route['parameters'])) {
             $body['parameters'] = [];
             foreach (getterArray($route, 'parameters', 'infos') as $key => $value) {
                 $body['parameters'][] = [
                     'name' => $key,
-                    'in' => getter($value, 'in'),
+                    'in' => getterValue($value, 'in'),
                     'required' => false,
                     'schema' => [
-                        'type' => $this->getType(getter($value, 'value')),
-                        'example' => getter($value, 'value')
+                        'type' => $this->getType(getterValue($value, 'value')),
+                        'example' => getterValue($value, 'value')
                     ]
                 ];
             }
@@ -44,12 +46,12 @@ trait WriteTrait
         }
         if (isset($route['data']) && !empty($route['data'])) {
             foreach ($route['data'] as $key => $value) {
-                if (is_callable($value)) {
+                if ($value instanceof Closure) {
                     $route['data'][$key] = $value();
                 }
             }
             $body['requestBody'] = [
-                'description' => getter($route, 'description'),
+                'description' => getterValue($route, 'description'),
                 'content' => [
                     $route['content-type'] => [
                         'schema' => $this->parser($route['data'])

@@ -17,14 +17,14 @@ class GenDoc extends Command
     use OptionsTrait, ParseValueTrait, PathsTrait;
     use WriteTrait, ControllerTrait, RoutesTrait;
     const COMMAND = "gen:doc ";
-    const PARAM = "{--controller= : The name of the controller} ";
+    const PARAM = "{--c= : The name of the controller} ";
     const INDEX = "{--i=1 : index action method} ";
     const SHOW = "{--sh=1 : show action method} ";
     const STORE = "{--s=1 : store action method} ";
     const UPDATE = "{--u=1 : uupdate action method} ";
     const DESTROY = "{--d=1 : destroy action method} ";
     const OTHER = "{--o=1 : other action method} ";
-    const ACTIONS = "{--actions= : controller action methods}";
+    const ACTIONS = "{--acts= : controller action methods}";
     const CLEAR = "{--clear=1 : clear cache and save to cache routes} ";
 
 
@@ -45,7 +45,7 @@ class GenDoc extends Command
     public function __construct(protected MakeRequestServise $makeRequestService)
     {
         $this->controllersPath = public_path("/docs/routes");
-        $this->docsPath = public_path("/docs/custom");
+        $this->docsPath = public_path("/docs");
         parent::__construct();
     }
 

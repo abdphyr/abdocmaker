@@ -15,10 +15,10 @@ trait ControllerTrait
 
     public function controller()
     {
-        $controller = app_path('Http/Controllers/' . $this->option('controller') . 'Controller.php');
+        $controller = app_path('Http/Controllers/' . $this->option('c') . 'Controller.php');
         $controllers = glob(app_path('Http/Controllers') . '/*');
-        if ($this->option('controller') && in_array($controller, $controllers)) {
-            return $this->namespace . $this->option('controller') . 'Controller';
+        if ($this->option('c') && in_array($controller, $controllers)) {
+            return $this->namespace . $this->option('c') . 'Controller';
         } else {
             $this->error("$controller nomli controller topilmadi");
             die;

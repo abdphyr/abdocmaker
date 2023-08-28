@@ -41,6 +41,6 @@ trait OptionsTrait
 
     public function controllerActions()
     {
-        return $this->option("actions") ? explode(',', $this->option("actions")) : null;
+        return $this->option("acts") ? explode(',', $this->option("acts")) : null;
     }
 }
