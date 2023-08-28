@@ -18,7 +18,7 @@ class MakeRequestServise
         $this->app = $application;
     }
 
-    protected function transformjHeadersToServerVars(array $headers)
+    protected function transformHeadersToServerVars(array $headers)
     {
         return collect(array_merge([], $headers))->mapWithKeys(function ($value, $name) {
             $name = strtr(strtoupper($name), '-', '_');
