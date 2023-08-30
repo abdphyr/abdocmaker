@@ -136,6 +136,26 @@ trait RoutesTrait
             $route['folder'] = $this->makePath($baseFolder, $this->sliceControllerName($controllerName));
             $route['action'] = $r->getActionMethod();
             $route['method'] = $method;
+            if (str_contains($route['uri'], '{')) {
+                $url = $route['uri'];
+                $index = strpos($url, '{');
+                while ($index) {
+                    $url = substr($url, $index + 1);
+                    $i = strpos($url, '}');
+                    $param = substr($url, 0, $i);
+                    $params[] = $param;
+                    $url = substr($url, $i + 1);
+                    $index = strpos($url, '{');
+                }
+            }
+            if (!empty($params)) {
+                $route['parameters']['params'] = [];
+                $route['parameters']['infos'] = [];
+                foreach ($params as $p) {
+                    $route['parameters']['params'][$p] = 1;
+                    $route['parameters']['infos'][$p] = ['in' => 'path', 'value' => 1];
+                }
+            }
             $route['parameters'] = ['params' => [], 'infos' => []];
             if (!in_array($method, ['GET', 'DELETE'])) {
                 $route['data'] = $this->authData($controllerName);
