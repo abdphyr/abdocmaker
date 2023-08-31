@@ -11,6 +11,7 @@ use Abd\Docmaker\Traits\RoutesTrait;
 use Abd\Docmaker\Traits\WriteTrait;
 use Illuminate\Console\Command;
 use Symfony\Component\VarDumper\VarDumper;
+use Illuminate\Support\Str;
 
 class GenDoc extends Command
 {
@@ -34,18 +35,20 @@ class GenDoc extends Command
 
     protected $namespace = 'App\\Http\\Controllers\\';
 
-    protected $controllersPath;
+    protected $controllersPath = "/docs/routes";
 
-    protected $docsPath;
+    protected $docsPath = "/docs";
 
-    protected $actions = [];
+    protected $mainDocFile = 'master';
 
-    protected $allroutes = [];
+    private $actions = [];
+
+    private $allroutes = [];
 
     public function __construct(protected MakeRequestServise $makeRequestService)
     {
-        $this->controllersPath = public_path("/docs/routes");
-        $this->docsPath = public_path("/docs");
+        $this->controllersPath = public_path($this->controllersPath);
+        $this->docsPath = public_path($this->docsPath);
         parent::__construct();
     }
 
@@ -57,19 +60,39 @@ class GenDoc extends Command
         } else {
             $this->makeRequestService->setApp($this->laravel);
             $routes = $this->getRoutes();
-            foreach ($routes as $route) {
-                $route = $this->prepareRoute($route);
-                $response = $this->makeRequestService->resolve($route);
-                $this->dumper(json_decode($response->getContent()));
-                $this->newLine(3);
-                $this->writeDoc($route, $response);
-                $this->info("JSON documentation generated successfully");
+            $baseDocPath = $this->writeMainDocFile();
+            $baseDocValue = json_decode(file_get_contents($baseDocPath), true);
+            if (!empty($routes)) {
+                foreach ($routes as $route) {
+                    $route = $this->prepareRoute($route);
+                    $response = $this->makeRequestService->resolve($route);
+                    $data = json_decode($response->getContent(), true);
+                    $document = [];
+                    $document[strtolower($route['method'])] = $this->makeEndpoint($route, $data);
+                    [$path, $action] = $this->docFilePath($route);
+                    if (file_exists($path)) {
+                        $filedata = json_decode(file_get_contents($path), true);
+                        foreach ($filedata as $key => $value) {
+                            $document[$key] = $value;
+                        }
+                    }
+                    $data = Str::remove('\\', json_encode($document));
+                    $endpoint = str_replace('api', '', $route['url']);
+                    if (!isset($baseDocValue['paths'][$endpoint])) {
+                        $baseDocValue['paths'][$endpoint] = [
+                            '$ref' => $route['folder'] . '/' . $action . '.json'
+                        ];
+                        file_put_contents($baseDocPath, Str::remove('\\', json_encode($baseDocValue)));
+                    }
+                    file_put_contents($path, $data);
+                    $this->info("JSON documentation generated successfully");
+                }
             }
         }
-    }    
+    }
 
     public function dumper($response)
     {
         VarDumper::dump($response);
-    }    
+    }
 }

@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Request;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Http\Kernel as HttpKernel;
 use Symfony\Component\HttpFoundation\File\UploadedFile as SymfonyUploadedFile;
+use Symfony\Component\VarDumper\VarDumper;
 
 class MakeRequestServise
 {
@@ -85,7 +86,8 @@ class MakeRequestServise
         if ($response->isOk()) {
             return $response;
         } else {
-            dd(json_decode($response->getContent()));
+            VarDumper::dump("Xatooooo",json_decode($response->getContent()));
+            return $response;
         }
     }
 

@@ -21,6 +21,7 @@ trait RoutesTrait
     public function prepareRoute($route)
     {
         $route = callerOfArray($route);
+        $route['url'] = $route['uri'];
         if (is_string($route)) {
             $route = $this->getRoute($route);
         }

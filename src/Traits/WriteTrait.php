@@ -1,4 +1,5 @@
 <?php
+
 namespace Abd\Docmaker\Traits;
 
 use Illuminate\Support\Str;
@@ -7,10 +8,19 @@ use Closure;
 
 trait WriteTrait
 {
-    public function writeDoc($route, $response)
+    public function writeDoc($route, $response, $routes)
     {
         $data = json_decode($response->getContent(), true);
-        $resschema = $this->parser($data);
+        $document[strtolower($route['method'])] = $this->makeEndpoint($route, $data);
+        $path = $this->docFilePath($route);
+        $data = Str::remove('\\', json_encode($document));
+        $this->writeMainDocFile();
+        file_put_contents($path, $data);
+    }
+
+    public function makeEndpoint($route, $data)
+    {
+        $body = [];
         $body['tags'] = getterValue($route, 'tags');
         $body['description'] = getterValue($route, 'description');
         if (!empty($route['parameters'])) {
@@ -64,7 +74,7 @@ trait WriteTrait
                 'description' => 'Success',
                 'content' => [
                     $route['content-type'] => [
-                        'schema' => $resschema
+                        'schema' => $this->parser($data)
                     ]
                 ]
             ]
@@ -76,12 +86,18 @@ trait WriteTrait
                 ]
             ];
         }
-        $document[strtolower($route['method'])] = $body;
-        $path = $this->docFilePath($route);
-        $data = Str::remove('\\', json_encode($document));
-        file_put_contents($path, $data);
+        return $body;
     }
-    
+
+    public function writeMainDocFile()
+    {
+        $path = $this->docsPath . '/' . $this->mainDocFile . '.json';
+        if (!file_exists($path)) {
+            file_put_contents($path, file_get_contents(dirname(__DIR__) . '/template.json'));
+        }
+        return $path;
+    }
+
     public function writeStart($path)
     {
         file_put_contents($path, "");
