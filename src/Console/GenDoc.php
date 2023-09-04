@@ -73,7 +73,9 @@ class GenDoc extends Command
                     if (file_exists($path)) {
                         $filedata = json_decode(file_get_contents($path), true);
                         foreach ($filedata as $key => $value) {
-                            $document[$key] = $value;
+                            if(strtolower($route['method']) != $key) {
+                                $document[$key] = $value;
+                            }
                         }
                     }
                     $data = Str::remove('\\', json_encode($document));
