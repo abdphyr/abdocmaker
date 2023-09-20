@@ -3,6 +3,7 @@
 namespace Abd\Docmaker\Console;
 
 use Abd\Docmaker\Services\MakeRequestServise;
+use Abd\Docmaker\Traits\Bootstrap;
 use Abd\Docmaker\Traits\ControllerTrait;
 use Abd\Docmaker\Traits\OptionsTrait;
 use Abd\Docmaker\Traits\ParseValueTrait;
@@ -11,11 +12,12 @@ use Abd\Docmaker\Traits\RoutesTrait;
 use Abd\Docmaker\Traits\WriteTrait;
 use Illuminate\Console\Command;
 use Symfony\Component\VarDumper\VarDumper;
-use Illuminate\Support\Str;
+
+use function PHPUnit\Framework\directoryExists;
 
 class GenDoc extends Command
 {
-    use OptionsTrait, ParseValueTrait, PathsTrait;
+    use Bootstrap, OptionsTrait, ParseValueTrait, PathsTrait;
     use WriteTrait, ControllerTrait, RoutesTrait;
     const COMMAND = "gen:doc ";
     const PARAM = "{--c= : The name of the controller} ";
@@ -45,6 +47,10 @@ class GenDoc extends Command
 
     private $allroutes = [];
 
+    protected $prefixes = [];
+
+    protected $authData = [];
+
     public function __construct(protected MakeRequestServise $makeRequestService)
     {
         $this->controllersPath = public_path($this->controllersPath);
@@ -54,47 +60,43 @@ class GenDoc extends Command
 
     public function handle()
     {
-        if ($this->clear()) {
-            clrmdir($this->controllersPath);
-            clrmdir($this->docsPath);
-        } else {
-            $this->makeRequestService->setApp($this->laravel);
-            $routes = $this->getRoutes();
-            $baseDocPath = $this->writeMainDocFile();
-            $baseDocValue = json_decode(file_get_contents($baseDocPath), true);
-            if (!empty($routes)) {
-                foreach ($routes as $route) {
-                    $route = $this->prepareRoute($route);
-                    $response = $this->makeRequestService->resolve($route);
-                    $data = json_decode($response->getContent(), true);
-                    $document = [];
-                    $document[strtolower($route['method'])] = $this->makeEndpoint($route, $data);
-                    [$path, $action] = $this->docFilePath($route);
+        try {
+            $this->bootstrap();
+            if ($this->clear()) {
+                if ($controller = $this->controller()) {
+                    $path = $this->controllerFilePath($controller, false);
+                    $routes = $this->getRoutes(withCreate: false);
+                    if (!empty($routes)) {
+                        clrmdir($this->docsPath . '/' . array_values($routes)[0]['folder']);
+                    }
                     if (file_exists($path)) {
-                        $filedata = json_decode(file_get_contents($path), true);
-                        foreach ($filedata as $key => $value) {
-                            if(strtolower($route['method']) != $key) {
-                                $document[$key] = $value;
-                            }
-                        }
+                        unlink($path);
+                    } else {
+                        $this->info("$controller api document files not found");
+                        exit;
                     }
-                    $data = Str::remove('\\', json_encode($document));
-                    $endpoint = str_replace('api', '', $route['url']);
-                    if (!isset($baseDocValue['paths'][$endpoint])) {
-                        $baseDocValue['paths'][$endpoint] = [
-                            '$ref' => $route['folder'] . '/' . $action . '.json'
-                        ];
-                        file_put_contents($baseDocPath, Str::remove('\\', json_encode($baseDocValue)));
+                    $this->info("$controller api document files deleted successfully");
+                }
+            } else {
+                $this->makeRequestService->setApp($this->laravel);
+                $routes = $this->getRoutes(withCreate: true);
+                if (!empty($routes)) {
+                    foreach ($routes as $route) {
+                        $route = $this->prepareRoute($route);
+                        $response = $this->makeRequestService->resolve($route);
+                        $this->writeMainDocFile($route);
+                        $this->writeToDocFile($route, $response);
+                        $this->info("JSON documentation generated successfully");
                     }
-                    file_put_contents($path, $data);
-                    $this->info("JSON documentation generated successfully");
                 }
             }
+        } catch (\Throwable $th) {
+            dd($th->getMessage());
         }
     }
 
-    public function dumper($response)
+    public function dumper($info)
     {
-        VarDumper::dump($response);
+        VarDumper::dump($info);
     }
 }

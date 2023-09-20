@@ -8,17 +8,7 @@ use Closure;
 
 trait WriteTrait
 {
-    public function writeDoc($route, $response, $routes)
-    {
-        $data = json_decode($response->getContent(), true);
-        $document[strtolower($route['method'])] = $this->makeEndpoint($route, $data);
-        $path = $this->docFilePath($route);
-        $data = Str::remove('\\', json_encode($document));
-        $this->writeMainDocFile();
-        file_put_contents($path, $data);
-    }
-
-    public function makeEndpoint($route, $data)
+    public function makeEndpoint($route, $data, $status, $statusText)
     {
         $body = [];
         $body['tags'] = getterValue($route, 'tags');
@@ -70,8 +60,8 @@ trait WriteTrait
             ];
         }
         $body['responses'] = [
-            '200' => [
-                'description' => 'Success',
+            "$status" => [
+                'description' => "$statusText",
                 'content' => [
                     $route['content-type'] => [
                         'schema' => $this->parser($data)
@@ -89,13 +79,51 @@ trait WriteTrait
         return $body;
     }
 
-    public function writeMainDocFile()
+    public function writeToDocFile($route, $response)
     {
-        $path = $this->docsPath . '/' . $this->mainDocFile . '.json';
-        if (!file_exists($path)) {
-            file_put_contents($path, file_get_contents(dirname(__DIR__) . '/template.json'));
+        $path = $this->docFilePath($route)['path'];
+        $method = strtolower($route['method']);
+        $status = $response->status();
+        $data = json_decode($response->getContent(), true);
+        if($status != 200) {
+            $this->dumper($data);
         }
-        return $path;
+        $document = [];
+        $endpoint = $this->makeEndpoint($route, $data, $status, $response->statusText());
+        if (file_exists($path)) {
+            $filedata = json_decode(file_get_contents($path), true);
+            foreach ($filedata as $key => $value) {
+                if ($key == $method) {
+                    $responses = $filedata[$method]['responses'];
+                    $responses["$status"] = $endpoint['responses']["$status"];
+                    $endpoint['responses'] = $responses;
+                    $document[$method] = $endpoint;
+                } else {
+                    $document[$key] = $value;
+                }
+            }
+            if (!isset($document[$method])) {
+                $document[$method] = $endpoint;
+            }
+        } else {
+            $document[$method] = $endpoint;
+        }
+        $data = Str::remove('\\', json_encode($document));
+        file_put_contents($path, $data, JSON_PRETTY_PRINT);
+    }
+
+    public function writeMainDocFile($route)
+    {
+        $action = $this->docFilePath($route)['action'];
+        $endpoint = str_replace('api', '', $route['url']);
+        $baseDocPath = $this->mainDocFilePath();
+        $baseDocValue = json_decode(file_get_contents($baseDocPath), true);
+        if (!isset($baseDocValue['paths'][$endpoint])) {
+            $baseDocValue['paths'][$endpoint] = [
+                '$ref' => $route['folder'] . '/' . $action . '.json'
+            ];
+            file_put_contents($baseDocPath, Str::remove('\\', json_encode($baseDocValue)), JSON_PRETTY_PRINT);
+        }
     }
 
     public function writeStart($path)
@@ -109,13 +137,13 @@ trait WriteTrait
         return file_put_contents($path, var_export($data, true) . ";", FILE_APPEND);
     }
 
-    public function writeControllerRoutes($sliceRoutes)
+    public function writeControllerRoutes($sliceRoutes, $withCreate)
     {
         try {
             foreach ($sliceRoutes as $controller => $routes) {
                 if (str_contains($controller, $this->namespace)) {
-                    $controllerFilePath = $this->controllerFilePath($controller);
-                    if (!file_exists($controllerFilePath)) {
+                    $controllerFilePath = $this->controllerFilePath($controller, $withCreate);
+                    if ($withCreate && !file_exists($controllerFilePath)) {
                         $this->writeStart($controllerFilePath);
                         $this->writeEnd($controllerFilePath, $routes);
                     }

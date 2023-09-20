@@ -83,17 +83,12 @@ class MakeRequestServise
             headers: $check('headers'),
             contentType: $route['content-type']
         );
-        if ($response->isOk()) {
-            return $response;
-        } else {
-            VarDumper::dump("Xatooooo",json_decode($response->getContent()));
-            return $response;
-        }
+        return $response;
     }
 
     public function resolveToken($loginRoute)
     {
-        return $this->resolve($loginRoute)->getData()?->access_token;
+        return $this->resolve($loginRoute)?->getData()?->access_token;
     }
 
     public function optional($route)
