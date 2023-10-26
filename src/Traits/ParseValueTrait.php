@@ -5,35 +5,35 @@ namespace Abd\Docmaker\Traits;
 
 trait ParseValueTrait
 {
-    const OBJ = "object";
-    const NUM = "integer";
-    const ARR = "array";
-    const STR = "string";
-    const BOO = "boolean";
+    protected $obj = "object";
+    protected $num = "integer";
+    protected $arr = "array";
+    protected $str = "string";
+    protected $boo = "boolean";
 
     public function getType($value)
     {
-        if ($this->maybeObject($value)) return self::OBJ;
-        if (is_numeric($value)) return self::NUM;
-        if (is_bool($value)) return self::BOO;
-        if (is_string($value)) return self::STR;
-        if (is_array($value)) return self::ARR;
+        if ($this->maybeObject($value)) return $this->obj;
+        if (is_numeric($value)) return $this->num;
+        if (is_bool($value)) return $this->boo;
+        if (is_string($value)) return $this->str;
+        if (is_array($value)) return $this->arr;
         if (is_null($value)) return null;
     }
 
     public function parser($data)
     {
         switch ($this->getType($data)) {
-            case self::OBJ:
-                $obj["type"] = self::OBJ;
+            case $this->obj:
+                $obj["type"] = $this->obj;
                 $obj['properties'] = [];
                 foreach ($data as $key => $value) {
                     $obj['properties'][$key] = $this->parser($value);
                 }
                 return $obj;
                 break;
-            case self::ARR:
-                $arr["type"] = self::ARR;
+            case $this->arr;
+                $arr["type"] = $this->arr;
                 $arr['items'] = [];
                 if (!empty($data)) {
                     $arr['items'] = $this->parser($data[0]);
@@ -42,21 +42,21 @@ trait ParseValueTrait
                 }
                 return $arr;
                 break;
-            case self::NUM:
+            case $this->num:
                 return [
-                    "type" => self::NUM,
+                    "type" => $this->num,
                     "example" => $data
                 ];
                 break;
-            case self::STR:
+            case $this->str:
                 return [
-                    "type" => self::STR,
+                    "type" => $this->str,
                     "example" => $data
                 ];
                 break;
-            case self::BOO:
+            case $this->boo:
                 return [
-                    "type" => self::BOO,
+                    "type" => $this->boo,
                     "example" => $data
                 ];
                 break;

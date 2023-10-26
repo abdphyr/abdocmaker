@@ -13,7 +13,6 @@ use Abd\Docmaker\Traits\WriteTrait;
 use Illuminate\Console\Command;
 use Symfony\Component\VarDumper\VarDumper;
 
-use function PHPUnit\Framework\directoryExists;
 
 class GenDoc extends Command
 {
