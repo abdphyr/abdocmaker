@@ -93,3 +93,22 @@ if (!function_exists('getterValue')) {
         return is_array($array) && isset($array[$key]) ? $array[$key] : null;
     }
 }
+
+if (!function_exists('fileFinder')) {
+    function fileFinder(string $name, string $path, string|null $namespace)
+    {
+        $items = scandir($path);
+        $results = [];
+        foreach ($items as $item) {
+            if ($item == '.' || $item == '..') continue;
+            if ($item == $name . '.php') {
+                $results[] = $namespace ? "$namespace\\$name" : $name;
+            }
+            if (is_dir("$path/$item")) {
+                $dirResults = fileFinder(name: $name, path: "$path/$item", namespace: "$namespace\\$item");
+                $results = array_merge($results, $dirResults);
+            }
+        }
+        return $results;
+    }
+}
